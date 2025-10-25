@@ -1,6 +1,8 @@
 module cli
 
-go 1.23.7
+go 1.23
+
+toolchain go1.24.3
 
 require github.com/dceluis/mcp-go v0.0.0-20250310024233-0431826d7f09
 
