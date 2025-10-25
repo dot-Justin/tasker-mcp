@@ -16,7 +16,8 @@ This document will guide you through setting up and running the Tasker MCP integ
 **CLI Server:**
 
 - From the `dist/` folder, select the correct CLI server binary for your device's architecture, such as `tasker-mcp-server-cli-aarch64`.
-- Copy both the binary and the `toolDescriptions.json` file to your device (phone or PC).
+- Copy the binary to your device (phone or PC). The server ships with the default Tasker tools embedded, so copy
+  `toolDescriptions.json` only if you want to override those definitions.
 - Rename the binary to `mcp-server` after copying.
 
 **Example:**
@@ -46,17 +47,17 @@ payload='{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": { "name":
 echo $payload | ./mcp-server --tools /path/to/toolDescriptions.json --tasker-api-key=tk_...
 ```
 
-#### Command-Line Flags
+#### Command-Line Flags and Environment Variables
 
-The `tasker-mcp-server-cli` application accepts the following flags:
+The `tasker-mcp-server-cli` application accepts the following flags (each can also be set via an environment variable):
 
-- `--tools`: Path to JSON file with Tasker tool definitions.
-- `--host`: Host address to listen on for SSE server (default: `0.0.0.0`).
-- `--port`: Port to listen on for SSE server (default: `8000`).
-- `--mode`: Transport mode: `sse`, or `stdio` (default: `stdio`).
-- `--tasker-host`: Tasker server host (default: `0.0.0.0`).
-- `--tasker-port`: Tasker server port (default: `1821`).
-- `--tasker-api-key`: The Tasker API Key.
+- `--tools` / `TASKER_MCP_TOOLS`: Path to JSON file with Tasker tool definitions. Defaults to the embedded Tasker tools when omitted.
+- `--host` / `TASKER_MCP_HOST`: Host address to listen on for SSE server (default: `0.0.0.0`).
+- `--port` / `TASKER_MCP_PORT`: Port to listen on for SSE server (default: `8000`).
+- `--mode` / `TASKER_MCP_MODE`: Transport mode: `sse`, or `stdio` (default: `stdio`).
+- `--tasker-host` / `TASKER_MCP_TASKER_HOST`: Tasker server host (default: `0.0.0.0`).
+- `--tasker-port` / `TASKER_MCP_TASKER_PORT`: Tasker server port (default: `1821`).
+- `--tasker-api-key` / `TASKER_MCP_TASKER_API_KEY`: The Tasker API Key.
 
 ### Step 3: Connect Your MCP-enabled App
 
