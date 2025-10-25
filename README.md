@@ -51,7 +51,7 @@ echo $payload | ./mcp-server --tools /path/to/toolDescriptions.json --tasker-api
 
 The `tasker-mcp-server-cli` application accepts the following flags (each can also be set via an environment variable):
 
-- `--tools` / `TASKER_MCP_TOOLS`: Path to JSON file with Tasker tool definitions. Defaults to the embedded Tasker tools when omitted.
+- `--tools` / `TASKER_MCP_TOOLS`: Path to JSON file with Tasker tool definitions. Defaults to `dist/toolDescriptions.json` when present.
 - `--host` / `TASKER_MCP_HOST`: Host address to listen on for SSE server (default: `0.0.0.0`).
 - `--port` / `TASKER_MCP_PORT`: Port to listen on for SSE server (default: `8000`).
 - `--mode` / `TASKER_MCP_MODE`: Transport mode: `sse`, or `stdio` (default: `stdio`).
