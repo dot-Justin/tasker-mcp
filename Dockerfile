@@ -13,8 +13,10 @@ ARG TARGETOS=linux
 ARG TARGETARCH=amd64
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -o /out/tasker-mcp-server ./cli
+    mkdir -p /out \
+    && cd cli \
+    && CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+        go build -o /out/tasker-mcp-server .
 
 FROM gcr.io/distroless/base-debian12:nonroot
 WORKDIR /app
