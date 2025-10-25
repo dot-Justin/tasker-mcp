@@ -24,9 +24,6 @@ var taskerHost string
 var taskerPort string
 var taskerApiKey string
 
-//go:embed assets/toolDescriptions.json
-var embeddedToolsJSON []byte
-
 const (
 	toolsEnvKey      = "TASKER_MCP_TOOLS"
 	hostEnvKey       = "TASKER_MCP_HOST"
@@ -207,31 +204,18 @@ func main() {
 	taskerPort = *taskerPortFlag
 	taskerApiKey = *taskerApiKeyFlag
 	toolsPath = resolveToolsPath(*toolsPathFlag)
-
-	var (
-		selectedTools []TaskerTool
-		err           error
-	)
-
-	switch {
-	case toolsPath != "":
-		selectedTools, err = loadToolsFromFile(toolsPath)
-		if err != nil {
-			log.Fatalf("failed to load tool descriptions from %s: %v", toolsPath, err)
-		}
-		log.Printf("Using tool descriptions file: %s", toolsPath)
-	case len(embeddedToolsJSON) > 0:
-		selectedTools, err = loadToolsFromBytes(embeddedToolsJSON)
-		if err != nil {
-			log.Fatalf("failed to load embedded tool descriptions: %v", err)
-		}
-		log.Printf("Using embedded tool descriptions (%d tools)", len(selectedTools))
-	default:
-		log.Fatal("no tool descriptions available; provide the -tools flag or embed tool definitions")
+	if toolsPath == "" {
+		log.Fatal("Please provide the -tools flag or set the TASKER_MCP_TOOLS environment variable with the path to the JSON file containing tool definitions")
 	}
 
+	if !fileExists(toolsPath) {
+		log.Fatalf("tool descriptions file not found: %s", toolsPath)
+	}
+
+	log.Printf("Using tool descriptions file: %s", toolsPath)
+
 	// Instantiate the MCP server using the new mcp-go-sdk API.
-	mcpServer := NewMCPServer(selectedTools)
+	mcpServer := NewMCPServer(taskerTools)
 
 	switch strings.ToLower(*mode) {
 	case "sse":
