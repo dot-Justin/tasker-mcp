@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -104,29 +105,28 @@ func runTaskerTask(taskerName string, args map[string]interface{}) (string, erro
 }
 
 // loadToolsFromFile reads and unmarshals the JSON file containing tool definitions.
-func loadToolsFromFile(filePath string) ([]TaskerTool, error) {
-	fileBytes, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, err
-	}
+func loadToolsFromBytes(data []byte) ([]TaskerTool, error) {
 	var tools []TaskerTool
-	if err := json.Unmarshal(fileBytes, &tools); err != nil {
+	if err := json.Unmarshal(data, &tools); err != nil {
 		return nil, err
 	}
 	return tools, nil
 }
 
-func NewMCPServer() *server.MCPServer {
+func loadToolsFromFile(filePath string) ([]TaskerTool, error) {
+	fileBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return loadToolsFromBytes(fileBytes)
+}
+
+func NewMCPServer(taskerTools []TaskerTool) *server.MCPServer {
 	mcpServer := server.NewMCPServer(
 		"tasker-mcp-server",
 		"1.0.0",
 		server.WithLogging(),
 	)
-
-	taskerTools, err := loadToolsFromFile(toolsPath)
-	if err != nil {
-		log.Fatalf("Failed to load tools from file: %v", err)
-	}
 
 	// Map to hold tool handlers for STDIO transport.
 	toolHandlers := make(map[string]server.ToolHandlerFunc)
@@ -215,7 +215,7 @@ func main() {
 	log.Printf("Using tool descriptions file: %s", toolsPath)
 
 	// Instantiate the MCP server using the new mcp-go-sdk API.
-	mcpServer := NewMCPServer()
+	mcpServer := NewMCPServer(taskerTools)
 
 	switch strings.ToLower(*mode) {
 	case "sse":

@@ -16,7 +16,8 @@ This document will guide you through setting up and running the Tasker MCP integ
 **CLI Server:**
 
 - From the `dist/` folder, select the correct CLI server binary for your device's architecture, such as `tasker-mcp-server-cli-aarch64`.
-- Copy both the binary and the `toolDescriptions.json` file to your device (phone or PC).
+- Copy the binary to your device (phone or PC). The server ships with the default Tasker tools embedded, so copy
+  `toolDescriptions.json` only if you want to override those definitions.
 - Rename the binary to `mcp-server` after copying.
 
 **Example:**
