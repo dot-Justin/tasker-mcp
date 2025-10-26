@@ -128,6 +128,9 @@ func NewMCPServer(selectedTools []TaskerTool) *server.MCPServer {
 		server.WithLogging(),
 	)
 
+	// Map to hold tool handlers for STDIO transport.
+	toolHandlers := make(map[string]server.ToolHandlerFunc)
+
 	for _, tool := range selectedTools {
 		// Since tool.InputSchema is already a map[string]interface{}, assign it directly.
 		inputSchema := tool.InputSchema
