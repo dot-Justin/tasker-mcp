@@ -128,6 +128,9 @@ func NewMCPServer(selectedTools []TaskerTool) *server.MCPServer {
 		server.WithLogging(),
 	)
 
+	// Map to hold tool handlers for STDIO transport.
+	toolHandlers := make(map[string]server.ToolHandlerFunc)
+
 	for _, tool := range selectedTools {
 		// Since tool.InputSchema is already a map[string]interface{}, assign it directly.
 		inputSchema := tool.InputSchema
@@ -214,6 +217,11 @@ func main() {
 	}
 
 	log.Printf("Loaded %d tool description(s) from %s", len(selectedTools), toolsPath)
+
+	selectedTools, err := loadToolsFromFile(toolsPath)
+	if err != nil {
+		log.Fatalf("failed to load tools: %v", err)
+	}
 
 	// Instantiate the MCP server using the new mcp-go-sdk API.
 	mcpServer := NewMCPServer(selectedTools)
