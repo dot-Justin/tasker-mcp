@@ -183,7 +183,6 @@ func NewMCPServer(selectedTools []TaskerTool) *server.MCPServer {
 		toolObj := mcp.NewTool(tool.Name, allOpts...)
 		handler := genericToolHandler(tool)
 		mcpServer.AddTool(toolObj, handler)
-		toolHandlers[tool.Name] = handler
 	}
 
 	return mcpServer
