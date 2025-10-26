@@ -211,7 +211,12 @@ func main() {
 		log.Fatalf("tool descriptions file not found: %s", toolsPath)
 	}
 
-	log.Printf("Using tool descriptions file: %s", toolsPath)
+	selectedTools, err := loadToolsFromFile(toolsPath)
+	if err != nil {
+		log.Fatalf("failed to load tools: %v", err)
+	}
+
+	log.Printf("Loaded %d tool description(s) from %s", len(selectedTools), toolsPath)
 
 	selectedTools, err := loadToolsFromFile(toolsPath)
 	if err != nil {
