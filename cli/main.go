@@ -215,11 +215,6 @@ func main() {
 
 	log.Printf("Loaded %d tool description(s) from %s", len(selectedTools), toolsPath)
 
-	selectedTools, err := loadToolsFromFile(toolsPath)
-	if err != nil {
-		log.Fatalf("failed to load tools: %v", err)
-	}
-
 	// Instantiate the MCP server using the new mcp-go-sdk API.
 	mcpServer := NewMCPServer(selectedTools)
 
