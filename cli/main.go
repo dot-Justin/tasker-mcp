@@ -5,6 +5,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -187,9 +188,9 @@ func NewMCPServer(selectedTools []TaskerTool) *server.MCPServer {
 
 func main() {
 	toolsPathFlag := flag.String("tools", getEnv(toolsEnvKey, ""), "Path to JSON file with Tasker tool definitions")
-	host := flag.String("host", getEnv(hostEnvKey, "0.0.0.0"), "Host address to listen on for SSE server (default: 0.0.0.0)")
-	port := flag.String("port", getEnv(portEnvKey, "8000"), "Port to listen on for SSE server (default: 8000)")
-	mode := flag.String("mode", getEnv(modeEnvKey, "stdio"), "Transport mode: sse, or stdio (default: stdio)")
+	host := flag.String("host", getEnv(hostEnvKey, "0.0.0.0"), "Host address to listen on (default: 0.0.0.0)")
+	port := flag.String("port", getEnv(portEnvKey, "8000"), "Port to listen on for the HTTP server (default: 8000)")
+	mode := flag.String("mode", getEnv(modeEnvKey, "http"), "Transport mode: http, sse, or stdio (default: http)")
 	taskerHostFlag := flag.String("tasker-host", getEnv(taskerHostEnvKey, "0.0.0.0"), "Tasker server host (default: 0.0.0.0)")
 	taskerPortFlag := flag.String("tasker-port", getEnv(taskerPortEnvKey, "1821"), "Tasker server port (default: 1821)")
 	taskerApiKeyFlag := flag.String("tasker-api-key", getEnv(taskerKeyEnvKey, ""), "Tasker API Key")
@@ -219,6 +220,11 @@ func main() {
 	mcpServer := NewMCPServer(selectedTools)
 
 	switch strings.ToLower(*mode) {
+	case "http":
+		addr := fmt.Sprintf("%s:%s", *host, *port)
+		if err := startHTTPServer(mcpServer, addr); err != nil {
+			log.Fatalf("HTTP server error: %v", err)
+		}
 	case "sse":
 		addr := fmt.Sprintf("%s:%s", *host, *port)
 		if err := startHTTPServer(mcpServer, addr); err != nil {
@@ -279,8 +285,11 @@ func resolveToolsPath(initial string) string {
 }
 
 func startHTTPServer(mcpServer *server.MCPServer, addr string) error {
-	sseServer := server.NewSSEServer(mcpServer)
 	mux := http.NewServeMux()
+
+	mux.Handle("/mcp", newStreamableHTTPHandler(mcpServer))
+
+	sseServer := server.NewSSEServer(mcpServer)
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
@@ -304,7 +313,7 @@ func startHTTPServer(mcpServer *server.MCPServer, addr string) error {
 
 		response := map[string]any{
 			"status":      "ok",
-			"endpoints":   []string{"/sse", "/message"},
+			"endpoints":   []string{"/mcp", "/sse", "/message"},
 			"healthcheck": "/healthz",
 		}
 
@@ -318,6 +327,80 @@ func startHTTPServer(mcpServer *server.MCPServer, addr string) error {
 		Handler: mux,
 	}
 
-	log.Printf("Starting SSE server on %s...", addr)
+	log.Printf("Starting HTTP server on %s with MCP streamable endpoint...", addr)
 	return httpServer.ListenAndServe()
+}
+
+func newStreamableHTTPHandler(mcpServer *server.MCPServer) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Handle preflight/metadata requests gracefully.
+		if r.Method == http.MethodOptions {
+			w.Header().Set("Allow", "OPTIONS, POST")
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		if r.Method != http.MethodPost {
+			w.Header().Set("Allow", "OPTIONS, POST")
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		defer r.Body.Close()
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Failed to read request body", http.StatusBadRequest)
+			return
+		}
+
+		rewrittenBody, err := normalizeMethodForServer(body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		responseMessage := mcpServer.HandleMessage(r.Context(), rewrittenBody)
+		if responseMessage == nil {
+			w.WriteHeader(http.StatusAccepted)
+			return
+		}
+
+		responseBytes, err := json.Marshal(responseMessage)
+		if err != nil {
+			http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write(responseBytes); err != nil {
+			log.Printf("failed to write response: %v", err)
+		}
+	})
+}
+
+func normalizeMethodForServer(body []byte) ([]byte, error) {
+	if len(body) == 0 {
+		return nil, errors.New("request body cannot be empty")
+	}
+
+	var envelope map[string]any
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		// Return original body to allow MCP server to produce a parse error.
+		return body, nil
+	}
+
+	if method, ok := envelope["method"].(string); ok {
+		if method == "list_tools" {
+			envelope["method"] = "tools/list"
+			rewritten, err := json.Marshal(envelope)
+			if err != nil {
+				return nil, err
+			}
+			return rewritten, nil
+		}
+	}
+
+	return body, nil
 }
