@@ -24,6 +24,6 @@ WORKDIR /app
 COPY --chown=nonroot:nonroot --from=builder /out/tasker-mcp-server /app/tasker-mcp-server
 COPY --chown=nonroot:nonroot dist/toolDescriptions.json /app/dist/toolDescriptions.json
 
-EXPOSE 8000
+EXPOSE 8081
 ENTRYPOINT ["/app/tasker-mcp-server"]
 CMD ["--mode","http","--host","0.0.0.0","--tools","/app/dist/toolDescriptions.json"]
