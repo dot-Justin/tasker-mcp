@@ -29,6 +29,7 @@ const (
 	toolsEnvKey      = "TASKER_MCP_TOOLS"
 	hostEnvKey       = "TASKER_MCP_HOST"
 	portEnvKey       = "TASKER_MCP_PORT"
+	standardPortKey  = "PORT"
 	modeEnvKey       = "TASKER_MCP_MODE"
 	taskerHostEnvKey = "TASKER_MCP_TASKER_HOST"
 	taskerPortEnvKey = "TASKER_MCP_TASKER_PORT"
@@ -189,7 +190,7 @@ func NewMCPServer(selectedTools []TaskerTool) *server.MCPServer {
 func main() {
 	toolsPathFlag := flag.String("tools", getEnv(toolsEnvKey, ""), "Path to JSON file with Tasker tool definitions")
 	host := flag.String("host", getEnv(hostEnvKey, "0.0.0.0"), "Host address to listen on (default: 0.0.0.0)")
-	port := flag.String("port", getEnv(portEnvKey, "8000"), "Port to listen on for the HTTP server (default: 8000)")
+	portFlag := flag.String("port", "", "Port to listen on for the HTTP server (default: 8000)")
 	mode := flag.String("mode", getEnv(modeEnvKey, "http"), "Transport mode: http, sse, or stdio (default: http)")
 	taskerHostFlag := flag.String("tasker-host", getEnv(taskerHostEnvKey, "0.0.0.0"), "Tasker server host (default: 0.0.0.0)")
 	taskerPortFlag := flag.String("tasker-port", getEnv(taskerPortEnvKey, "1821"), "Tasker server port (default: 1821)")
@@ -219,14 +220,16 @@ func main() {
 	// Instantiate the MCP server using the new mcp-go-sdk API.
 	mcpServer := NewMCPServer(selectedTools)
 
+	port := resolveListenerPort(*portFlag)
+
 	switch strings.ToLower(*mode) {
 	case "http":
-		addr := fmt.Sprintf("%s:%s", *host, *port)
+		addr := fmt.Sprintf("%s:%s", *host, port)
 		if err := startHTTPServer(mcpServer, addr); err != nil {
 			log.Fatalf("HTTP server error: %v", err)
 		}
 	case "sse":
-		addr := fmt.Sprintf("%s:%s", *host, *port)
+		addr := fmt.Sprintf("%s:%s", *host, port)
 		if err := startHTTPServer(mcpServer, addr); err != nil {
 			log.Fatalf("SSE server error: %v", err)
 		}
@@ -244,6 +247,19 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func resolveListenerPort(flagValue string) string {
+	if flagValue != "" {
+		return flagValue
+	}
+	if value := os.Getenv(standardPortKey); value != "" {
+		return value
+	}
+	if value := os.Getenv(portEnvKey); value != "" {
+		return value
+	}
+	return "8000"
 }
 
 func fileExists(path string) bool {
