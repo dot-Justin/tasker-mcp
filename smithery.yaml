@@ -4,5 +4,5 @@ build:
   dockerBuildPath: "."
 startCommand:
   type: "http"
-  port: 8000
+  port: 8081
   healthcheckPath: "/healthz"
