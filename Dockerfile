@@ -26,4 +26,4 @@ COPY --chown=nonroot:nonroot dist/toolDescriptions.json /app/dist/toolDescriptio
 
 EXPOSE 8000
 ENTRYPOINT ["/app/tasker-mcp-server"]
-CMD ["--mode","sse","--host","0.0.0.0","--port","8000","--tools","/app/dist/toolDescriptions.json"]
+CMD ["--mode","http","--host","0.0.0.0","--port","8000","--tools","/app/dist/toolDescriptions.json"]

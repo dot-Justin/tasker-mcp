@@ -34,11 +34,13 @@ Using `adb push`:
 adb push dist/tasker-mcp-server-cli-aarch64 /data/data/com.termux/files/home/mcp-server
 ```
 
-- Run the server in SSE mode with:
+- Run the server with the HTTP transport (default) with:
 
 ```bash
-./mcp-server --tools /path/to/toolDescriptions.json --tasker-api-key=tk_... --mode sse
+./mcp-server --tools /path/to/toolDescriptions.json --tasker-api-key=tk_...
 ```
+
+- To expose only the SSE endpoints instead of the HTTP transport, append `--mode sse`.
 
 - Or call it through the stdio transport:
 
@@ -52,9 +54,9 @@ echo $payload | ./mcp-server --tools /path/to/toolDescriptions.json --tasker-api
 The `tasker-mcp-server-cli` application accepts the following flags (each can also be set via an environment variable):
 
 - `--tools` / `TASKER_MCP_TOOLS`: Path to JSON file with Tasker tool definitions. Defaults to `dist/toolDescriptions.json` when present.
-- `--host` / `TASKER_MCP_HOST`: Host address to listen on for SSE server (default: `0.0.0.0`).
-- `--port` / `TASKER_MCP_PORT`: Port to listen on for SSE server (default: `8000`).
-- `--mode` / `TASKER_MCP_MODE`: Transport mode: `sse`, or `stdio` (default: `stdio`).
+- `--host` / `TASKER_MCP_HOST`: Host address to listen on (default: `0.0.0.0`).
+- `--port` / `TASKER_MCP_PORT`: Port to listen on (default: `8000`).
+- `--mode` / `TASKER_MCP_MODE`: Transport mode: `http`, `sse`, or `stdio` (default: `http`).
 - `--tasker-host` / `TASKER_MCP_TASKER_HOST`: Tasker server host (default: `0.0.0.0`).
 - `--tasker-port` / `TASKER_MCP_TASKER_PORT`: Tasker server port (default: `1821`).
 - `--tasker-api-key` / `TASKER_MCP_TASKER_API_KEY`: The Tasker API Key.
